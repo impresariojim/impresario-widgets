@@ -40,4 +40,39 @@
       "FC Lugano","Yverdon Sport FC"
     ];
 
-    const capacities = [31500,38512,20660,26104,15680,30084,14850,8700,12544,26104,490]()
+    const capacities = [31500,38512,20660,26104,15680,30084,14850,8700,12544,26104,4900,4200];
+    const sellThrough = [90.4,67.9,87.5,58.3,77.0,33.0,66.9,92.7,55.0,26.4,79.2,65.9];
+    const highlightIndex = 5;
+
+    const markerColors = clubNames.map((_, i) =>
+      i === highlightIndex ? "gold" : "red"
+    );
+
+    const markerSizes = clubNames.map((_, i) =>
+      i === highlightIndex ? 26 : 18
+    );
+
+    const trace = {
+      type: "scatter",
+      mode: "markers+text",
+      x: capacities,
+      y: sellThrough,
+      text: clubNames,
+      textposition: "top center",
+      marker: {
+        color: markerColors,
+        size: markerSizes,
+        line: { color: "black", width: 2 }
+      }
+    };
+
+    const layout = {
+      title: "TEST PLOT – big red dots",
+      xaxis: { title: "Capacity" },
+      yaxis: { title: "Sell-through (%)", range: [0, 105] }
+    };
+
+    Plotly.newPlot("swiss-league-plot", [trace], layout, {responsive: true});
+  </script>
+</body>
+</html>
