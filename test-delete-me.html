@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TEST VERSION — Should Be Pink</title>
+
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <style>
+    body {
+      background: hotpink;
+      color: white;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 40px;
+      text-align: center;
+    }
+    #chart { 
+      height: 500px; 
+      border: 6px solid yellow;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>IT WORKED — THIS FILE IS LIVE</h1>
+  <p>If you still see the old content, you are opening a different file.</p>
+  <div id="chart"></div>
+
+  <script>
+    Plotly.newPlot("chart", [{
+      x: [1,2,3],
+      y: [4,1,2],
+      mode: "markers",
+      marker: { size: 20, color: "purple" }
+    }]);
+  </script>
+</body>
+</html>
