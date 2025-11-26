@@ -1,210 +1,160 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Swiss Super League — Capacity vs Sell-Through</title>
+<script>
+  // ==============================
+  // CONFIG AREA – CHANGE FOR NEW LEAGUES
+  // ==============================
 
-  <!-- Montserrat font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+  const clubNames = [
+    "BSC Young Boys",
+    "FC Basel 1893",
+    "FC St. Gallen 1879",
+    "FC Zurich",
+    "FC Luzern",
+    "Servette FC",
+    "FC Sion",
+    "FC Winterthur",
+    "FC Lausanne-Sport",
+    "Grasshopper Club Zurich",
+    "FC Lugano",
+    "Yverdon Sport FC"
+  ];
 
-  <!-- Plotly CDN -->
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  const capacities = [31500, 38512, 20660, 26104, 15680, 30084, 14850, 8700, 12544, 26104, 4900, 4200];
+  const sellThrough = [90.4, 67.9, 87.5, 58.3, 77.0, 33.0, 66.9, 92.7, 55.0, 26.4, 79.2, 65.9];
 
-  <style>
-    :root {
-      --imp-royal-blue: #07385E;
-      --imp-gold: #D5C393;
-      --imp-black: #1A1A1A;
-      --imp-white: #FFFFFF;
-    }
+  // index of focus club (Servette)
+  const highlightIndex = 5;
+  const xMax = 40000;
 
-    * { box-sizing: border-box; }
+  // ==============================
+  // DATA TRACES
+  // ==============================
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background-color: var(--imp-white);
-      color: var(--imp-black);
-    }
+  // Only label the highlighted club; others show label on hover only
+  const pointLabels = clubNames.map((name, i) =>
+    i === highlightIndex ? name : ""
+  );
 
-    .page {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+  const markerColors = clubNames.map((_, i) =>
+    i === highlightIndex ? "#D5C393" : "rgba(7,56,94,0.35)"
+  );
 
-    .page-header {
-      background-color: var(--imp-royal-blue);
-      color: var(--imp-white);
-      padding: 16px 32px 12px 32px;
-      border-bottom: 2px solid var(--imp-gold);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-    }
+  const markerSizes = clubNames.map((_, i) =>
+    i === highlightIndex ? 16 : 8
+  );
 
-    .page-title-group { display: flex; flex-direction: column; gap: 4px; }
+  const clubsTrace = {
+    type: "scatter",
+    mode: "markers+text",
+    name: "Clubs",
+    x: capacities,
+    y: sellThrough,
+    text: pointLabels,
+    textposition: "top center",
+    textfont: {
+      family: "Montserrat, sans-serif",
+      size: 10,
+      color: "#1A1A1A"
+    },
+    marker: {
+      color: markerColors,
+      size: markerSizes,
+      line: { color: "#07385E", width: 1 }
+    },
+    hovertemplate:
+      "<b>%{customdata}</b><br>" +
+      "Capacity: %{x}<br>" +
+      "Sell-through: %{y:.1f}%<extra></extra>",
+    customdata: clubNames
+  };
 
-    .page-title {
-      font-size: 20px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
+  const line100Trace = {
+    type: "scatter",
+    mode: "lines",
+    x: [0, xMax],
+    y: [100, 100],
+    line: {
+      color: "rgba(0,0,0,0.35)",
+      width: 1,
+      dash: "dot"
+    },
+    hoverinfo: "skip",
+    showlegend: false
+  };
 
-    .page-subtitle {
-      font-size: 13px;
-      opacity: 0.9;
-    }
+  // ==============================
+  // LAYOUT – STRIPPED DOWN
+  // ==============================
 
-    .logo-placeholder {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-      border: 1px solid rgba(213, 195, 147, 0.6);
-      padding: 6px 10px;
-      border-radius: 999px;
-      color: var(--imp-gold);
-      white-space: nowrap;
-    }
+  const layout = {
+    margin: { l: 70, r: 20, t: 20, b: 60 },
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "#FFFFFF",
 
-    .page-body {
-      padding: 24px 32px 32px 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+    showlegend: false,
 
-    .explanatory-text {
-      max-width: 900px;
-      font-size: 13px;
-      line-height: 1.45;
-      color: #333333;
-    }
-
-    .chart-container {
-      width: 100%;
-      max-width: 1200px;
-      height: 720px;
-    }
-
-    #swiss-league-plot {
-      width: 100%;
-      height: 100%;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="page">
-    <header class="page-header">
-      <div class="page-title-group">
-        <div class="page-title">Swiss Super League</div>
-        <div class="page-subtitle">Stadium Capacity vs. Average League Sell-Through</div>
-      </div>
-      <div class="logo-placeholder">IMPRESARIO STRATEGIC</div>
-    </header>
-
-    <main class="page-body">
-      <div class="explanatory-text">
-        Each point represents a Swiss Super League club, plotted by stadium capacity on the horizontal axis
-        and average league sell-through (%) on the vertical axis.
-      </div>
-
-      <div class="chart-container">
-        <div id="swiss-league-plot"></div>
-      </div>
-    </main>
-  </div>
-
-  <script>
-    // Data
-    const clubNames = [
-      "BSC Young Boys",
-      "FC Basel 1893",
-      "FC St. Gallen 1879",
-      "FC Zurich",
-      "FC Luzern",
-      "Servette FC",
-      "FC Sion",
-      "FC Winterthur",
-      "FC Lausanne-Sport",
-      "Grasshopper Club Zurich",
-      "FC Lugano",
-      "Yverdon Sport FC"
-    ];
-
-    const capacities = [31500, 38512, 20660, 26104, 15680, 30084, 14850, 8700, 12544, 26104, 4900, 4200];
-    const sellThrough = [90.4, 67.9, 87.5, 58.3, 77.0, 33.0, 66.9, 92.7, 55.0, 26.4, 79.2, 65.9];
-
-    const highlightIndex = 5; // Servette FC
-
-    const markerColors = clubNames.map((_, i) =>
-      i === highlightIndex ? "#D5C393" : "#07385E"
-    );
-
-    const markerSizes = clubNames.map((_, i) =>
-      i === highlightIndex ? 18 : 12
-    );
-
-    const clubsTrace = {
-      type: "scatter",
-      mode: "markers+text",
-      name: "Clubs",
-      x: capacities,
-      y: sellThrough,
-      text: clubNames,
-      textposition: "top right",
-      textfont: {
-        family: "Montserrat, sans-serif",
-        size: 10,
-        color: "#1A1A1A"
+    xaxis: {
+      title: {
+        text: "Stadium capacity",
+        font: { family: "Montserrat, sans-serif", size: 12, color: "#1A1A1A" }
       },
-      marker: {
-        color: markerColors,
-        size: markerSizes,
-        line: { color: "#FFFFFF", width: 1 }
+      tickfont: { family: "Montserrat, sans-serif", size: 10, color: "#555555" },
+      gridcolor: "rgba(0,0,0,0)",      // no gridlines
+      linecolor: "rgba(0,0,0,0.5)",
+      linewidth: 0.8,
+      mirror: true,
+      rangemode: "tozero"
+    },
+    yaxis: {
+      title: {
+        text: "Average league sell-through (%)",
+        font: { family: "Montserrat, sans-serif", size: 12, color: "#1A1A1A" }
       },
-      hovertemplate:
-        "<b>%{text}</b><br>" +
-        "Capacity: %{x}<br>" +
-        "Sell-Through: %{y:.1f}%<extra></extra>"
-    };
+      tickfont: { family: "Montserrat, sans-serif", size: 10, color: "#555555" },
+      gridcolor: "rgba(0,0,0,0)",      // no gridlines
+      linecolor: "rgba(0,0,0,0.5)",
+      linewidth: 0.8,
+      mirror: true,
+      range: [0, 105]
+    },
 
-    const layout = {
-      margin: { l: 80, r: 40, t: 40, b: 70 },
-      paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "#FFFFFF",
-      showlegend: false,
-      xaxis: {
-        title: {
-          text: "Stadium Capacity",
-          font: { family: "Montserrat, sans-serif", size: 13, color: "#1A1A1A" }
+    annotations: [
+      {
+        x: xMax,
+        y: 100,
+        xref: "x",
+        yref: "y",
+        text: "100% of capacity",
+        showarrow: false,
+        xanchor: "right",
+        yanchor: "bottom",
+        font: {
+          family: "Montserrat, sans-serif",
+          size: 9,
+          color: "rgba(0,0,0,0.7)"
+        }
+      },
+      {
+        x: capacities[highlightIndex],
+        y: sellThrough[highlightIndex],
+        xref: "x",
+        yref: "y",
+        text: "Servette: big house,\nlow utilization",
+        showarrow: true,
+        arrowhead: 2,
+        arrowsize: 0.6,
+        ax: 40,
+        ay: -40,
+        font: {
+          family: "Montserrat, sans-serif",
+          size: 9,
+          color: "#07385E"
         },
-        tickfont: { family: "Montserrat, sans-serif", size: 11, color: "#1A1A1A" },
-        gridcolor: "rgba(7,56,94,0.08)",
-        zeroline: false,
-        rangemode: "tozero"
-      },
-      yaxis: {
-        title: {
-          text: "Average League Sell-Through (%)",
-          font: { family: "Montserrat, sans-serif", size: 13, color: "#1A1A1A" }
-        },
-        tickfont: { family: "Montserrat, sans-serif", size: 11, color: "#1A1A1A" },
-        gridcolor: "rgba(7,56,94,0.08)",
-        zeroline: false,
-        range: [0, 105]
+        arrowcolor: "rgba(7,56,94,0.6)"
       }
-    };
+    ]
+  };
 
-    const config = { responsive: true, displayModeBar: false };
+  const config = { responsive: true, displayModeBar: false };
 
-    Plotly.newPlot("swiss-league-plot", [clubsTrace], layout, config);
-  </script>
-</body>
-</html>
+  Plotly.newPlot("swiss-league-plot", [clubsTrace, line100Trace], layout, config);
+</script>
