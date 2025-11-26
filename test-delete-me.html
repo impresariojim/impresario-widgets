@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Swiss Super League – Capacity vs Sell-Through (Bold Blue)</title>
+  <title>Swiss Super League – St. Gallen in Context</title>
 
   <!-- Plotly -->
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
@@ -58,9 +58,9 @@
 
 <body>
   <div class="brand-line">IMPRESARIO STRATEGIC</div>
-  <h1>Swiss Super League: stadium size vs sell-through</h1>
+  <h1>Swiss Super League: St. Gallen in context</h1>
   <p class="subtitle">
-    Stadium capacity (horizontal) vs average sell-through (vertical). One club is highlighted to emphasize structural position.
+    Stadium capacity (horizontal) vs average sell-through (vertical). St. Gallen is highlighted in gold; all other clubs are dimmed for background context.
   </p>
 
   <hr>
@@ -77,16 +77,18 @@
     const capacities   = [31500,38512,20660,26104,15680,30084,14850,8700,12544,26104,4900,4200];
     const sellThrough = [90.4,67.9,87.5,58.3,77.0,33.0,66.9,92.7,55.0,26.4,79.2,65.9];
 
-    // focus on Luzern (index 4)
-    const highlightIndex = 4;
+    // highlight ST. GALLEN → index 2
+    const highlightIndex = 2;
 
-    // ==== STRONG BLUE + GOLD ====
+    const medianCapacity = 18170;
+    const medianSell     = 67.4;
+
     const markerColors = clubNames.map((_, i) =>
-      i === highlightIndex ? "#D5C393" : "#07385E"
+      i === highlightIndex ? "#D5C393" : "#A6B8CF"   // gold vs muted blue-grey
     );
 
     const markerSizes = clubNames.map((_, i) =>
-      i === highlightIndex ? 24 : 16
+      i === highlightIndex ? 26 : 14
     );
 
     const clubsTrace = {
@@ -94,7 +96,7 @@
       mode: "markers+text",
       x: capacities,
       y: sellThrough,
-      text: clubNames,
+      text: clubNames.map((name, i) => (i === highlightIndex ? name : "")),
       textposition: "top center",
       textfont: {
         family: "Montserrat, sans-serif",
@@ -108,16 +110,8 @@
         line: { color: "#1A1A1A", width: 2.5 }
       },
       hovertemplate:
-        "<b>%{text}</b><br>Capacity: %{x}<br>Sell-through: %{y:.1f}%<extra></extra>"
-    };
-
-    const line100Trace = {
-      type: "scatter",
-      mode: "lines",
-      x: [0, 40000],
-      y: [100, 100],
-      line: { color: "#D5C393", width: 2, dash: "dash" },
-      hoverinfo: "skip"
+        "<b>%{customdata}</b><br>Capacity: %{x}<br>Sell-through: %{y:.1f}%<extra></extra>",
+      customdata: clubNames
     };
 
     const layout = {
@@ -146,14 +140,33 @@
         linecolor: "#1A1A1A",
         linewidth: 1.2,
         mirror: true,
-        range: [0, 105]
+        range: [0, 100]
       },
+
+      shapes: [
+        {
+          type: "line",
+          x0: medianCapacity,
+          x1: medianCapacity,
+          y0: 0,
+          y1: 100,
+          line: { color: "rgba(0,0,0,0.25)", width: 1, dash: "dot" }
+        },
+        {
+          type: "line",
+          x0: 0,
+          x1: 40000,
+          y0: medianSell,
+          y1: medianSell,
+          line: { color: "rgba(0,0,0,0.25)", width: 1, dash: "dot" }
+        }
+      ],
 
       annotations: [
         {
           x: capacities[highlightIndex],
           y: sellThrough[highlightIndex],
-          text: "<b>FC Luzern</b><br>Smaller house, solid utilization",
+          text: "<b>St. Gallen</b><br>Strong utilization at mid-size stadium",
           showarrow: true,
           arrowhead: 3,
           arrowsize: 1,
@@ -169,7 +182,8 @@
       ]
     };
 
-    Plotly.newPlot("swiss-league-plot", [clubsTrace, line100Trace], layout, { responsive: true });
+    // note: 100% dotted line trace removed
+    Plotly.newPlot("swiss-league-plot", [clubsTrace], layout, { responsive: true });
   </script>
 </body>
 </html>
