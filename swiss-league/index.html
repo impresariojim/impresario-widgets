@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Swiss Super League Overview | Impresario Strategic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+    <style>
+        * {
+            font-family: 'Montserrat', sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f8f8;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        .chart-wrapper {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .branding {
+            position: absolute;
+            bottom: 70px;
+            right: 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.5;
+        }
+        .branding-text {
+            color: #07385E;
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .branding-icon {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chart-wrapper">
+            <div id="chart"></div>
+            <div class="branding">
+                <svg class="branding-icon" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 10 L50 110" stroke="#07385E" stroke-width="4"/>
+                    <path d="M35 25 L35 110" stroke="#07385E" stroke-width="4"/>
+                    <circle cx="50" cy="70" r="35" stroke="#07385E" stroke-width="4" fill="none"/>
+                </svg>
+                <span class="branding-text">Impresario Strategic</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Brand colors
+        const NAVY = '#07385E';
+        const GOLD = '#D5C393';
+        const WHITE = '#FFFFFF';
+        const DARK = '#1A1A1A';
+        const LIGHT_BG = '#FAFAFA';
+        const NAVY_LIGHT = 'rgba(7, 56, 94, 0.08)';
+        const NAVY_MED = 'rgba(7, 56, 94, 0.25)';
+
+        // Club data
+        const clubs = [
+            { name: "BSC Young Boys", capacity: 31500, sellThrough: 90.4 },
+            { name: "FC Basel 1893", capacity: 38512, sellThrough: 67.9 },
+            { name: "FC St. Gallen 1879", capacity: 20660, sellThrough: 87.5, rival: true },
+            { name: "FC Zurich", capacity: 26104, sellThrough: 58.3 },
+            { name: "FC Luzern", capacity: 15680, sellThrough: 77.0, highlight: true },
+            { name: "Servette FC", capacity: 30084, sellThrough: 33.0 },
+            { name: "FC Sion", capacity: 14850, sellThrough: 66.9 },
+            { name: "FC Winterthur", capacity: 8700, sellThrough: 92.7 },
+            { name: "FC Lausanne-Sport", capacity: 12544, sellThrough: 55.0 },
+            { name: "Grasshopper Club Zurich", capacity: 26104, sellThrough: 26.4 },
+            { name: "FC Lugano", capacity: 4900, sellThrough: 79.2 },
+            { name: "Yverdon Sport FC", capacity: 4200, sellThrough: 65.9 }
+        ];
+
+        // Main scatter trace
+        const mainTrace = {
+            x: clubs.map(c => c.capacity),
+            y: clubs.map(c => c.sellThrough),
+            text: clubs.map(c => c.name),
+            mode: 'markers+text',
+            type: 'scatter',
+            name: 'Clubs',
+            showlegend: false,
+            marker: {
+                size: clubs.map(c => c.highlight ? 18 : (c.rival ? 15 : 11)),
+                color: clubs.map(c => c.highlight ? GOLD : (c.rival ? WHITE : NAVY)),
+                line: {
+                    color: clubs.map(c => c.highlight ? NAVY : (c.rival ? NAVY : WHITE)),
+                    width: clubs.map(c => c.highlight ? 2.5 : (c.rival ? 2.5 : 1.5))
+                }
+            },
+            textposition: 'top right',
+            textfont: {
+                family: 'Montserrat',
+                size: 9,
+                color: 'rgba(26, 26, 26, 0.7)'
+            },
+            hovertemplate: '<b>%{text}</b><br>Capacity: %{x:,}<br>Sell-Through: %{y:.1f}%<extra></extra>'
+        };
+
+        // 100% capacity reference line
+        const capacityLine = {
+            x: [0, 42000],
+            y: [100, 100],
+            mode: 'lines',
+            type: 'scatter',
+            name: '100% Capacity',
+            showlegend: false,
+            line: {
+                color: GOLD,
+                width: 1.5,
+                dash: 'dot'
+            },
+            hoverinfo: 'skip'
+        };
+
+        // Segmentation zones - subtle navy styling
+        const segments = [
+            {
+                name: 'Small Venue Clubs',
+                x: [3500, 9500, 9500, 3500, 3500],
+                y: [60, 60, 98, 98, 60],
+                labelX: 6500,
+                labelY: 54
+            },
+            {
+                name: 'The Middle Class',
+                x: [11000, 22000, 22000, 11000, 11000],
+                y: [50, 50, 92, 92, 50],
+                labelX: 16500,
+                labelY: 44
+            },
+            {
+                name: 'Oversized / Challenged',
+                x: [24500, 31500, 31500, 24500, 24500],
+                y: [20, 20, 65, 65, 20],
+                labelX: 28000,
+                labelY: 14
+            },
+            {
+                name: 'The Big Guys',
+                x: [30000, 40000, 40000, 30000, 30000],
+                y: [62, 62, 95, 95, 62],
+                labelX: 35000,
+                labelY: 56
+            }
+        ];
+
+        const segmentTraces = [];
+        segments.forEach((seg, i) => {
+            // Zone outline
+            segmentTraces.push({
+                x: seg.x,
+                y: seg.y,
+                mode: 'lines',
+                type: 'scatter',
+                name: seg.name,
+                showlegend: false,
+                visible: true,
+                line: {
+                    color: NAVY_MED,
+                    width: 1.5,
+                    dash: 'dash'
+                },
+                fill: 'toself',
+                fillcolor: NAVY_LIGHT,
+                hoverinfo: 'skip'
+            });
+            // Zone label
+            segmentTraces.push({
+                x: [seg.labelX],
+                y: [seg.labelY],
+                mode: 'text',
+                type: 'scatter',
+                showlegend: false,
+                visible: true,
+                text: [seg.name.replace(' / ', '<br>')],
+                textfont: {
+                    family: 'Montserrat',
+                    size: 10,
+                    color: NAVY
+                },
+                hoverinfo: 'skip'
+            });
+        });
+
+        // Combine all traces
+        const data = [mainTrace, capacityLine, ...segmentTraces];
+
+        // Layout
+        const layout = {
+            title: {
+                text: 'Swiss Super League: Stadium Capacity vs. Sell-Through',
+                font: {
+                    family: 'Montserrat',
+                    size: 18,
+                    color: NAVY
+                },
+                x: 0.5,
+                xanchor: 'center',
+                y: 0.95
+            },
+            xaxis: {
+                title: {
+                    text: 'Stadium Capacity',
+                    font: {
+                        family: 'Montserrat',
+                        size: 12,
+                        color: NAVY
+                    },
+                    standoff: 15
+                },
+                range: [0, 42000],
+                showgrid: true,
+                gridcolor: 'rgba(7, 56, 94, 0.08)',
+                gridwidth: 1,
+                zeroline: false,
+                tickfont: {
+                    family: 'Montserrat',
+                    size: 10,
+                    color: 'rgba(26, 26, 26, 0.6)'
+                },
+                tickformat: ',d',
+                linecolor: 'rgba(7, 56, 94, 0.2)',
+                linewidth: 1
+            },
+            yaxis: {
+                title: {
+                    text: 'Sell-Through (%)',
+                    font: {
+                        family: 'Montserrat',
+                        size: 12,
+                        color: NAVY
+                    },
+                    standoff: 10
+                },
+                range: [0, 108],
+                showgrid: true,
+                gridcolor: 'rgba(7, 56, 94, 0.08)',
+                gridwidth: 1,
+                zeroline: false,
+                tickfont: {
+                    family: 'Montserrat',
+                    size: 10,
+                    color: 'rgba(26, 26, 26, 0.6)'
+                },
+                ticksuffix: '%',
+                linecolor: 'rgba(7, 56, 94, 0.2)',
+                linewidth: 1
+            },
+            plot_bgcolor: WHITE,
+            paper_bgcolor: WHITE,
+            width: 1200,
+            height: 700,
+            margin: {
+                l: 70,
+                r: 40,
+                t: 60,
+                b: 80
+            },
+            hovermode: 'closest',
+            showlegend: false,
+            updatemenus: [{
+                type: 'buttons',
+                direction: 'right',
+                x: 0.5,
+                xanchor: 'center',
+                y: -0.12,
+                yanchor: 'top',
+                pad: { r: 10, t: 10 },
+                showactive: true,
+                bgcolor: WHITE,
+                bordercolor: NAVY,
+                borderwidth: 1,
+                font: {
+                    family: 'Montserrat',
+                    size: 11,
+                    color: NAVY
+                },
+                buttons: [
+                    {
+                        label: 'Show Segments',
+                        method: 'update',
+                        args: [{ visible: [true, true, ...Array(segments.length * 2).fill(true)] }]
+                    },
+                    {
+                        label: 'Hide Segments',
+                        method: 'update',
+                        args: [{ visible: [true, true, ...Array(segments.length * 2).fill(false)] }]
+                    }
+                ]
+            }]
+        };
+
+        // Config
+        const config = {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'autoScale2d'],
+            displaylogo: false
+        };
+
+        Plotly.newPlot('chart', data, layout, config);
+    </script>
+</body>
+</html>

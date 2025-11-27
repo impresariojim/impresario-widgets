@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Swiss Super League — Capacity vs Sell-Through</title>
+
+  <!-- Montserrat font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Plotly CDN -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <style>
+    :root {
+      --imp-royal-blue: #07385E;
+      --imp-gold: #D5C393;
+      --imp-black: #1A1A1A;
+      --imp-white: #FFFFFF;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: var(--imp-white);
+      color: var(--imp-black);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--imp-white);
+    }
+
+    .page-header {
+      background-color: var(--imp-royal-blue);
+      color: var(--imp-white);
+      padding: 16px 32px 12px 32px;
+      border-bottom: 2px solid var(--imp-gold);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .page-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .logo-placeholder {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      border: 1px solid rgba(213, 195, 147, 0.6);
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: var(--imp-gold);
+      white-space: nowrap;
+    }
+
+    /* Replace with an actual logo image if you want:
+    .logo-placeholder {
+      border: none;
+      padding: 0;
+    }
+    .logo-placeholder img {
+      height: 28px;
+      display: block;
+    }
+    */
+
+    .page-body {
+      padding: 24px 32px 32px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .explanatory-text {
+      max-width: 900px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #333333;
+    }
+
+    .chart-container {
+      width: 100%;
+      max-width: 1200px;
+      height: 720px;
+    }
+
+    #swiss-league-plot {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <header class="page-header">
+      <div class="page-title-group">
+        <div class="page-title">Swiss Super League</div>
+        <div class="page-subtitle">Stadium Capacity vs. Average League Sell-Through</div>
+      </div>
+      <div class="logo-placeholder">
+        IMPRESARIO&nbsp;STRATEGIC
+        <!-- Or drop in a real logo image here -->
+        <!-- <img src="impresario-logo-horizontal.png" alt="Impresario Strategic Logo" /> -->
+      </div>
+    </header>
+
+    <main class="page-body">
+      <div class="explanatory-text">
+        Each point represents a Swiss Super League club, plotted by stadium capacity on the horizontal axis
+        and average league sell-through (%) on the vertical axis. Highlighted zones show different structural
+        positions in the market by size and utilization.
+      </div>
+
+      <div class="chart-container">
+        <div id="swiss-league-plot"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // --- Data (from the original Swiss League artifact) ---
+    const clubNames = [
+      "BSC Young Boys",
+      "FC Basel 1893",
+      "FC St. Gallen 1879",
+      "FC Zurich",
+      "FC Luzern",
+      "Servette FC",
+      "FC Sion",
+      "FC Winterthur",
+      "FC Lausanne-Sport",
+      "Grasshopper Club Zurich",
+      "FC Lugano",
+      "Yverdon Sport FC"
+    ];
+
+    const capacities = [31500, 38512, 20660, 26104, 15680, 30084, 14850, 8700, 12544, 26104, 4900, 4200];
+
+    const sellThrough = [90.4, 67.9, 87.5, 58.3, 77.0, 33.0, 66.9, 92.7, 55.0, 26.4, 79.2, 65.9];
+
+    // Choose a single highlight club (index) to pop in gold.
+    // You can change this index if you want a different highlight.
+    const highlightIndex = 5; // Servette FC
+
+    const markerColors = clubNames.map((_, i) =>
+      i === highlightIndex ? "#D5C393" : "#07385E"
+    );
+
+    const markerSizes = clubNames.map((_, i) =>
+      i === highlightIndex ? 18 : 12
+    );
+
+    // --- Traces ---
+
+    const clubsTrace = {
+      type: "scatter",
+      mode: "markers+text",
+      name: "Clubs",
+      x: capacities,
+      y: sellThrough,
+      text: clubNames,
+      textposition: "top right",
+      textfont: {
+        family: "Montserrat, sans-serif",
+        size: 10,
+        color: "#1A1A1A"
+      },
+      marker: {
+        color: markerColors,
+        size: markerSizes,
+        line: {
+          color: "#FFFFFF",
+          width: 1
+        }
+      },
+      hovertemplate:
+        "<b>%{text}</b><br>" +
+        "Capacity: %{x}<br>" +
+        "Sell-Through: %{y:.1f}%<extra></extra>"
+    };
+
+    const line100Trace = {
+      type: "scatter",
+      mode: "lines",
+      name: "100% Capacity",
+      x: [0, 40000],
+      y: [100, 100],
+      line: {
+        color: "#D5C393",
+        dash: "dot",
+        width: 1.5
+      },
+      hoverinfo: "skip"
+    };
+
+    // --- Layout with brand styling & structural zones ---
+
+    const layout = {
+      margin: { l: 80, r: 40, t: 40, b: 70 },
+      paper_bgcolor: "rgba(0,0,0,0)",   // transparent inside container
+      plot_bgcolor: "#FFFFFF",
+      showlegend: true,
+      legend: {
+        orientation: "h",
+        x: 0,
+        y: 1.1,
+        font: {
+          family: "Montserrat, sans-serif",
+          size: 10,
+          color: "#1A1A1A"
+        }
+      },
+      xaxis: {
+        title: {
+          text: "Stadium Capacity",
+          font: {
+            family: "Montserrat, sans-serif",
+            size: 13,
+            color: "#1A1A1A"
+          }
+        },
+        tickfont: {
+          family: "Montserrat, sans-serif",
+          size: 11,
+          color: "#1A1A1A"
+        },
+        gridcolor: "rgba(7,56,94,0.08)",
+        zeroline: false,
+        rangemode: "tozero"
+      },
+      yaxis: {
+        title: {
+          text: "Average League Sell-Through (%)",
+          font: {
+            family: "Montserrat, sans-serif",
+            size: 13,
+            color: "#1A1A1A"
+          }
+        },
+        tickfont: {
+          family: "Montserrat, sans-serif",
+          size: 11,
+          color: "#1A1A1A"
+        },
+        gridcolor: "rgba(7,56,94,0.08)",
+        zeroline: false,
+        range: [0, 105]
+      },
+      shapes: [
+        // Small Venue Clubs (3,500–9,500 capacity, 60–98% sell-through)
+        {
+          type: "rect",
+          xref: "x",
+          yref: "y",
+          x0: 3500,
+          x1: 9500,
+          y0: 60,
+          y1: 98,
+          line: {
+            color: "rgba(7,56,94,0.4)",
+            width: 1,
+            dash: "dot"
+          },
+          fillcolor: "rgba(7,56,94,0.03)"
+        },
+        // The Middle Class (11,000–22,000 capacity, 50–92% sell-through)
+        {
+          type: "rect",
+          xref: "x",
+          yref: "y",
+          x0: 11000,
+          x1: 22000,
+          y0: 50,
+          y1: 92,
+          line: {
+            color: "rgba(26,26,26,0.5)",
+            width: 1,
+            dash: "dot"
+          },
+          fillcolor: "rgba(26,26,26,0.03)"
+        },
+        // Oversized / Challenged (24,500–31,500 capacity, 20–65% sell-through)
+        {
+          type: "rect",
+          xref: "x",
+          yref: "y",
+          x0: 24500,
+          x1: 31500,
+          y0: 20,
+          y1: 65,
+          line: {
+            color: "rgba(7,56,94,0.4)",
+            width: 1,
+            dash: "dash"
+          },
+          fillcolor: "rgba(7,56,94,0.02)"
+        },
+        // The Big Guys (30,000–40,000 capacity, 62–95% sell-through)
+        {
+          type: "rect",
+          xref: "x",
+          yref: "y",
+          x0: 30000,
+          x1: 40000,
+          y0: 62,
+          y1: 95,
+          line: {
+            color: "rgba(213,195,147,0.8)",
+            width: 1.2,
+            dash: "solid"
+          },
+          fillcolor: "rgba(213,195,147,0.05)"
+        }
+      ],
+      annotations: [
+        {
+          x: 6500,
+          y: 99.5,
+          xref: "x",
+          yref: "y",
+          text: "Small Venue<br>Clubs",
+          showarrow: false,
+          align: "center",
+          font: {
+            family: "Montserrat, sans-serif",
+            size: 11,
+            color: "#07385E"
+          }
+        },
+        {
+          x: 16500,
+          y: 93.5,
+          xref: "x",
+          yref: "y",
+          text: "The Middle<br>Class",
+          showarrow: false,
+          align: "center",
+          font: {
+            family: "Montserrat, sans-serif",
+            size: 11,
+            color: "#1A1A1A"
+          }
+        },
+        {
+          x: 28000,
+          y: 19,
+          xref: "x",
+          yref: "y",
+          text: "Oversized /<br>Challenged",
+          showarrow: false,
+          align: "center",
+          font: {
+            family: "Montserrat, sans-serif",
+            size: 11,
+            color: "#07385E"
+          }
+        },
+        {
+          x: 35000,
+          y: 96.5,
+          xref: "x",
+          yref: "y",
+          text: "The Big<br>Guys",
+          showarrow: false,
+          align: "center",
+          font: {
+            family: "Montserrat, sans-serif",
+            size: 11,
+            color: "#D5C393"
+          }
+        }
+      ]
+    };
+
+    const config = {
+      responsive: true,
+      displayModeBar: false
+    };
+
+    Plotly.newPlot("swiss-league-plot", [clubsTrace, line100Trace], layout, config);
+  </script>
+</body>
+</html>
